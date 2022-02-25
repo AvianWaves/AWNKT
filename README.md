@@ -4,10 +4,10 @@ A ReaScript (LUA) and MIDI CC based approach for connecting the Korg NanoKontrol
 # Summary
 Reaper DAW has support for numerous control surfaces, but not the Korg NanoKontrol 2 natively.  Putting the NK2 into SONAR mode allows you to use the Mackie Control Universal setting in Reaper, but the results leave a lot to be desired.  The interface is sluggish and Reaper gets bogged down to the point of sometimes crashing if you move multiple faders at the same time.
 
-I wondered if there was a way to do this just using ReaScript (LUA) and responding directly to control messages.  It turns out, it is, and the results are fantastic with speedy fader and pot response, full LED support, and customizable actions.  Introducing: the Avian Waves NK2 Toolkit for Reaper!
+I wondered if there was a way to do this just using ReaScript (LUA) and responding directly to control messages.  It turns out, it is, and the results are fantastic with speedy fader and knob response, full LED support, and customizable actions.  Introducing: the Avian Waves NK2 Toolkit for Reaper!
 
 # Usage
-After installation the NK2 will control track volume using faders, track pan using the pots, and solo/mute/record arm using the buttons.  The transport buttons light up based on if a song is playing, paused, or stopped.  The tracks will automatically correspond to groups of 8 tracks depending on the current active (last touched) track.  This means that depending on what part of your project has focus, the NK2's 8 track sections will automatically correspond to Reaper tracks 1-8, 9-16, 10-24, 25-32, etc.
+After installation the NK2 will control track volume using faders, track pan using the knobs, and solo/mute/record arm using the buttons.  The transport buttons light up based on if a song is playing, paused, or stopped.  The tracks will automatically correspond to groups of 8 tracks depending on the current active (last touched) track.  This means that depending on what part of your project has focus, the NK2's 8 track sections will automatically correspond to Reaper tracks 1-8, 9-16, 10-24, 25-32, etc.
 
 # Installation
 1. Using the Korg Kontrol Editor, put your NanoKontrol 2 into CC control mode with LED Mode set to EXTERNAL.  Set the global MIDI channel to 1.
