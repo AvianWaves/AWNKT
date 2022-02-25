@@ -9,7 +9,7 @@
 
 local path = ({reaper.get_action_context()})[2]:match('^.+[\\//]')
 package.path = path .. "?.lua"
-require("AWNKT-Lib")
+require("__AWNKT-Lib")
 
 startTime = os.time()
 

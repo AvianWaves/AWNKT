@@ -6,11 +6,14 @@
 -- Project Repository: https://github.com/AvianWaves/AWNKT
 -- License: Apache License, 2.0 - https://opensource.org/licenses/Apache-2.0
 -- 
+-- See __inifile.lua for additional licensing for the inifile project.  https://github.com/bartbes/inifile
+--
 
 -- Load dependency library (search based on current script path)
 local path = ({reaper.get_action_context()})[2]:match('^.+[\\//]')
 package.path = path .. "?.lua"
-require("AWNKT-Lib")
+require("__AWNKT-Lib")
+local inifile = require("__inifile")
 
 ----------------------
 -- GLOBAL VARIABLES --
@@ -19,15 +22,21 @@ require("AWNKT-Lib")
 -- GLOBAL STATE --
 DEBUG = 0                 		-- Set to "1" to enable debug console
 TickCount = 0             		-- Used run the main defer code slower by doing it ever 'n' ticks.
-TicksPerStateScan = 5     		-- Number of ticks to lapse before running state tracking code.
-LastInteractedTrack = 1   		-- Tracks the last track that the user actually interacted wtih.  Should also be the same as the track the user last clicked or arrowed, excluding multi-selections and deselections.
+TicksPerStateScan = 3     		-- Number of ticks to lapse before running state tracking code.
+LastInteractedTrack = 1   		-- Tracks the last track that the user actually interacted with.  Should also be the same as the track the user last clicked or arrowed, excluding multi-selections and deselections.
+ScriptDuration = 5            -- Time in seconds CC assigned scripts can stay running
 LastTrackCount = 0        		-- The total number of tracks, last checked.
 TrackRoot = 1             		-- The track that refers to "Track 1" on the nanoKontrol
-NK2MidiDevice = 0         		-- The hardware ID of the NK2
+NK2MidiDeviceID = 0         	-- The hardware ID of the NK2
 LastMouseModifierState = 0    -- Tracks the mouse modifier value (raw) to limit executions on each tick for mouse state
+ShowWindow = 1								-- Show the track status window
 
 -- GRAPHICS STATE --		
 GfxDoDraw = false							-- Signals a forced graphics update on the next timer tick
+FontWin = "Calibri"						-- Font to use in Windows
+FontMac = "Helvetica"					-- Font to use in MacOS
+FontOther = "Arial"						-- Font to use for other
+FontSize = 20									-- Point size of font for track number
 FontGamma = 1.8           		-- Multiply the font color by this amount
 VolGamma = 0.8            		-- Multiply the background color by this amount for the volume
 VolMuteRedGamma = 1.4     		-- Multiply the volume color's red component by this value (and G/B by the inverse)
@@ -135,7 +144,7 @@ end
 
 function TrackActivePropertyState()
 	-- Set the MIDI Device ID which is the reported device ID in Reaper + 16 (by API definition)
-  local midiDeviceID = NK2MidiDevice + 16
+  local midiDeviceID = NK2MidiDeviceID + 16
   
 	-- Check the track count to see if it has changed, which would require a redraw of the window
   local trackCount = reaper.CountTracks(0)
@@ -211,7 +220,7 @@ end
 --------------------
 function PlaybackState()
 	-- Set the MIDI Device ID which is the reported device ID in Reaper + 16 (by API definition)
-  local midiDeviceID = NK2MidiDevice + 16
+  local midiDeviceID = NK2MidiDeviceID + 16
 	
 	-- playback state is a bitfield
   local playstate = reaper.GetPlayState()
@@ -230,19 +239,19 @@ function PlaybackState()
 			-- PLAYING = Play lit, Stop unlit
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportPlayingCC, 127)
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportStopCC, 0)
-      DebugMsg("[Playing]\n")
+      DebugMsg("[Playback: Playing]\n")
       TrackForceRefreshLEDs = true  -- to fix up some issues with some LEDs turning off during playing state transition, also force a track LED refresh
     elseif TransportPaused > 0 then
 			-- PAUSED = Play lit, Stop lit
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportPlayingCC, 127)
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportStopCC, 127)
-      DebugMsg("[Paused]\n")
+      DebugMsg("[Playback: Paused]\n")
       TrackForceRefreshLEDs = true  -- to fix up some issues with some LEDs turning off during playing state transition, also force a track LED refresh
     else
 			-- STOPPED = Play unlit, Stop unlit
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportPlayingCC, 0)
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportStopCC, 0)
-      DebugMsg("[Stopped]\n")
+      DebugMsg("[Playback: Stopped]\n")
       TrackForceRefreshLEDs = true  -- to fix up some issues with some LEDs turning off during playing state transition, also force a track LED refresh
     end
   end
@@ -253,10 +262,10 @@ function PlaybackState()
 
     if TransportRecording == 4 then
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportRecordingCC, 127)
-      DebugMsg("[Recording Start]\n")
+      DebugMsg("[Recording: Start]\n")
     else
       reaper.StuffMIDIMessage(midiDeviceID, 176, TransportRecordingCC, 0)
-      DebugMsg("[Recording End]\n")
+      DebugMsg("[Recording: End]\n")
     end
   end
 end
@@ -269,9 +278,11 @@ end
 -- Main --
 ----------
 
+DebugMsg("<< AWNKT Service Starting... >>\n")
+
 -- Turn all LEDs off by MIDI CCs
 function MIDICCReset()
-  local midiDeviceID = NK2MidiDevice + 16
+  local midiDeviceID = NK2MidiDeviceID + 16
 
   for i = 0, 7, 1 do
     reaper.StuffMIDIMessage(midiDeviceID, 176, TrackSoloBaseCC + i, 0)
@@ -295,66 +306,70 @@ end
 
 -- Paint the AWNKT status window
 function DrawWindow()
-  local str
-  
-  -- Fill the background
-  gfx.set(GfxColorBGRed, GfxColorBGGreen, GfxColorBGBlue)
-  gfx.rect(0, 0, gfx.w, gfx.h)
+	if ShowWindow > 0 then
+		local str
+		
+		-- Fill the background
+		gfx.set(GfxColorBGRed, GfxColorBGGreen, GfxColorBGBlue)
+		gfx.rect(0, 0, gfx.w, gfx.h)
 
-  for i = 0, 7, 1 do
-    if TrackRoot + i <= LastTrackCount then
-      -- Draw the channel volume
-      if TrackMuteState[i] > 0 then
-        gfx.set(GfxColorVolMuteRed, GfxColorVolMuteGreen, GfxColorVolMuteBlue)
-      else
-        gfx.set(GfxColorVolRed, GfxColorVolGreen, GfxColorVolBlue)
-      end
-    
-      local vol = TrackVolume[i]
-      if vol > 1 then
-        vol = 1
-      end
-      vol = vol ^ (1/3)
-  
-      local sectionWidth = gfx.w / 8
-      local barWidth = gfx.w / 10
-      
-      gfx.rect(sectionWidth * i + ((sectionWidth - barWidth) / 2) + 1, gfx.h - (gfx.h * vol), barWidth, gfx.h)
-    
-      -- Draw the channel numbers
-      if TrackSoloState[i] > 0 then
-        gfx.set(GfxColorTextSoloRed, GfxColorTextSoloGreen, GfxColorTextSoloBlue)
-      else
-        gfx.set(GfxColorTextRed, GfxColorTextGreen, GfxColorTextBlue)
-      end
-      
-      gfx.x = (gfx.w / 8) * i
-      gfx.y = gfx.h / 10
-      if gfx.y > 10 then
-        gfx.y = 10
-      end
-      str = tostring(TrackRoot + i)
-      gfx.drawstr(str, 1, (gfx.w / 8) * (i + 1), gfx.h)
+		for i = 0, 7, 1 do
+			if TrackRoot + i <= LastTrackCount then
+				-- Draw the channel volume
+				if TrackMuteState[i] > 0 then
+					gfx.set(GfxColorVolMuteRed, GfxColorVolMuteGreen, GfxColorVolMuteBlue)
+				else
+					gfx.set(GfxColorVolRed, GfxColorVolGreen, GfxColorVolBlue)
+				end
+			
+				local vol = TrackVolume[i]
+				if vol > 1 then
+					vol = 1
+				end
+				vol = vol ^ (1/3)
+		
+				local sectionWidth = gfx.w / 8
+				local barWidth = gfx.w / 10
+				
+				gfx.rect(sectionWidth * i + ((sectionWidth - barWidth) / 2) + 1, gfx.h - (gfx.h * vol), barWidth, gfx.h)
+			
+				-- Draw the channel numbers
+				if TrackSoloState[i] > 0 then
+					gfx.set(GfxColorTextSoloRed, GfxColorTextSoloGreen, GfxColorTextSoloBlue)
+				else
+					gfx.set(GfxColorTextRed, GfxColorTextGreen, GfxColorTextBlue)
+				end
+				
+				gfx.x = (gfx.w / 8) * i
+				gfx.y = gfx.h / 10
+				if gfx.y > 10 then
+					gfx.y = 10
+				end
+				str = tostring(TrackRoot + i)
+				gfx.drawstr(str, 1, (gfx.w / 8) * (i + 1), gfx.h)
 
-      -- Draw a rectangle around the track if it's the active track
-      gfx.set(GfxColorActiveTrackRed, GfxColorActiveTrackGreen, GfxColorActiveTrackBlue)
-      if LastInteractedTrack == TrackRoot + i then
-        gfx.rect((gfx.w / 8) * i + 1, 1, sectionWidth - 2, gfx.h - 1, false)
-      end
-    end
-  end
-  
-  gfx.update()
+				-- Draw a rectangle around the track if it's the active track
+				gfx.set(GfxColorActiveTrackRed, GfxColorActiveTrackGreen, GfxColorActiveTrackBlue)
+				if LastInteractedTrack == TrackRoot + i then
+					gfx.rect((gfx.w / 8) * i + 1, 1, sectionWidth - 2, gfx.h - 1, false)
+				end
+			end
+		end
+		
+		gfx.update()
+	end
 end
 
 -- Stores the last window state, including if docked and docking position so when it is reopened it starts out where it was left off
 function SaveWindowState()
-  local gDock, gX, gY, gW, gH = gfx.dock(-1, 0, 0, 0, 0)
-  reaper.SetExtState("AvianWaves.AWNKT", "G_Dock", gDock, 1)
-  reaper.SetExtState("AvianWaves.AWNKT", "G_X", gX, 1)
-  reaper.SetExtState("AvianWaves.AWNKT", "G_Y", gY, 1)
-  reaper.SetExtState("AvianWaves.AWNKT", "G_W", gW, 1)
-  reaper.SetExtState("AvianWaves.AWNKT", "G_H", gH, 1)
+	if ShowWindow > 0 then
+		local gDock, gX, gY, gW, gH = gfx.dock(-1, 0, 0, 0, 0)
+		reaper.SetExtState("AvianWaves.AWNKT", "G_Dock", gDock, 1)
+		reaper.SetExtState("AvianWaves.AWNKT", "G_X", gX, 1)
+		reaper.SetExtState("AvianWaves.AWNKT", "G_Y", gY, 1)
+		reaper.SetExtState("AvianWaves.AWNKT", "G_W", gW, 1)
+		reaper.SetExtState("AvianWaves.AWNKT", "G_H", gH, 1)
+	end
 end
 
 -- Code to execute when defer ticks
@@ -429,62 +444,135 @@ function OnExit()
 end
 
 -- Load settings
-reaper.SetExtState("AvianWaves.AWNKT", "S_VolChangeLogMode", "1", false)
-reaper.SetExtState("AvianWaves.AWNKT", "S_VolTopRange", "1", false)
-reaper.SetExtState("AvianWaves.AWNKT", "S_ScriptDuration", "5", false)
-reaper.SetExtState("AvianWaves.AWNKT", "S_NK2MidiDevice", "15", false)
-NK2MidiDevice = reaper.GetExtState("AvianWaves.AWNKT", "S_NK2MidiDevice")
+DebugMsg("Loading Settings...\n")
+local settings = inifile.parse(path .. "AWNKT.ini")
+
+TicksPerStateScan = settings['General']['TicksPerStateScan']
+VolChangeLogMode = settings['General']['VolChangeLogMode']
+VolTopRange = settings['General']['VolTopRange']
+ControlScriptDuration = settings['General']['ControlScriptDuration']
+ShowWindow = settings['General']['ShowWindow']
+
+NK2MidiDeviceID = settings['NK2']['MidiDeviceID']
+TrackSoloBaseCC = settings['NK2']['TrackSoloBaseCC']
+TrackMuteBaseCC = settings['NK2']['TrackMuteBaseCC']
+TrackRecordBaseCC = settings['NK2']['TrackRecordBaseCC']
+TransportTrackPrevCC = settings['NK2']['TransportTrackPrevCC']
+TransportTrackNextCC = settings['NK2']['TransportTrackNextCC']
+TransportCycleCC = settings['NK2']['TransportCycleCC']
+TransportMarkerSetCC = settings['NK2']['TransportMarkerSetCC']
+TransportMarkerPrevCC = settings['NK2']['TransportMarkerPrevCC']
+TransportMarkerNextCC = settings['NK2']['TransportMarkerNextCC']
+TransportRewindCC = settings['NK2']['TransportRewindCC']
+TransportForwardCC = settings['NK2']['TransportForwardCC']
+TransportPlayingCC = settings['NK2']['TransportPlayingCC']
+TransportStopCC = settings['NK2']['TransportStopCC']
+TransportRecordingCC = settings['NK2']['TransportRecordingCC']
+
+FontWin = TrimString(settings['Graphics']['FontWin'])
+FontMac = TrimString(settings['Graphics']['FontMac'])
+FontOther = TrimString(settings['Graphics']['FontOther'])
+FontSize = settings['Graphics']['FontSize']
+FontGamma = settings['Graphics']['FontGamma']
+VolGamma = settings['Graphics']['VolGamma']
+VolMuteRedGamma = settings['Graphics']['VolMuteRedGamma']
+TextSoloYellowGamma = settings['Graphics']['TextSoloYellowGamma']
+ActiveTrackGamma = settings['Graphics']['ActiveTrackGamma']
+
+DebugMsg("TicksPerStateScan = " .. TicksPerStateScan .. "\n")
+DebugMsg("VolChangeLogMode = " .. VolChangeLogMode .. "\n")
+DebugMsg("VolTopRange = " .. VolTopRange .. "\n")
+DebugMsg("ControlScriptDuration = " .. ControlScriptDuration .. "\n")
+
+DebugMsg("TrackSoloBaseCC = " .. TrackSoloBaseCC .. "\n")
+DebugMsg("TrackMuteBaseCC = " .. TrackMuteBaseCC .. "\n")
+DebugMsg("TrackRecordBaseCC = " .. TrackRecordBaseCC .. "\n")
+DebugMsg("TransportTrackPrevCC = " .. TransportTrackPrevCC .. "\n")
+DebugMsg("TransportTrackNextCC = " .. TransportTrackNextCC .. "\n")
+DebugMsg("TransportCycleCC = " .. TransportCycleCC .. "\n")
+DebugMsg("TransportMarkerSetCC = " .. TransportMarkerSetCC .. "\n")
+DebugMsg("TransportMarkerPrevCC = " .. TransportMarkerPrevCC .. "\n")
+DebugMsg("TransportMarkerNextCC = " .. TransportMarkerNextCC .. "\n")
+DebugMsg("TransportRewindCC = " .. TransportRewindCC .. "\n")
+DebugMsg("TransportForwardCC = " .. TransportForwardCC .. "\n")
+DebugMsg("TransportPlayingCC = " .. TransportPlayingCC .. "\n")
+DebugMsg("TransportStopCC = " .. TransportStopCC .. "\n")
+DebugMsg("TransportRecordingCC = " .. TransportRecordingCC .. "\n")
+
+DebugMsg("FontWin = " .. FontWin .. "\n")
+DebugMsg("FontMac = " .. FontMac .. "\n")
+DebugMsg("FontOther = " .. FontOther .. "\n")
+DebugMsg("FontSize = " .. FontSize .. "\n")
+DebugMsg("FontGamma = " .. FontGamma .. "\n")
+DebugMsg("VolGamma = " .. VolGamma .. "\n")
+DebugMsg("VolMuteRedGamma = " .. VolMuteRedGamma .. "\n")
+DebugMsg("TextSoloYellowGamma = " .. TextSoloYellowGamma .. "\n")
+DebugMsg("ActiveTrackGamma = " .. ActiveTrackGamma .. "\n")
+
+-- Set global state for settings other scripts may need
+reaper.SetExtState("AvianWaves.AWNKT", "S_VolChangeLogMode", VolChangeLogMode, false)
+reaper.SetExtState("AvianWaves.AWNKT", "S_VolTopRange", VolTopRange, false)
+reaper.SetExtState("AvianWaves.AWNKT", "S_ScriptDuration", ControlScriptDuration, false)
+reaper.SetExtState("AvianWaves.AWNKT", "S_NK2MidiDeviceID", NK2MidiDeviceID, false)
 
 -- Bootstrap the service
 reaper.SetExtState("AvianWaves.AWNKT", "LastInteractedTrack", LastInteractedTrack, false)
 reaper.SetExtState("AvianWaves.AWNKT", "TrackRoot", TrackRoot, false)
 reaper.defer(OnDeferTick)
 reaper.atexit(OnExit)
+
+-- Zero out the LEDs before the first state scan begins
 MIDICCReset()
-DebugMsg("<< AWNKT Service Started >>\n")
 
 -- Create window
-if reaper.HasExtState("AvianWaves.AWNKT", "G_Dock") then
-  local gDock = reaper.GetExtState("AvianWaves.AWNKT", "G_Dock")
-  local gX = reaper.GetExtState("AvianWaves.AWNKT", "G_X")
-  local gY = reaper.GetExtState("AvianWaves.AWNKT", "G_Y")
-  local gW = reaper.GetExtState("AvianWaves.AWNKT", "G_W")
-  local gH = reaper.GetExtState("AvianWaves.AWNKT", "G_H")
-  gfx.init("AWNKT", gW, gH, gDock, gX, gY)
-else
-  gfx.init("AWNKT", 500, 200, false)
+if ShowWindow > 0 then
+	DebugMsg("Initializing window.\n")
+
+	if reaper.HasExtState("AvianWaves.AWNKT", "G_Dock") then
+		local gDock = reaper.GetExtState("AvianWaves.AWNKT", "G_Dock")
+		local gX = reaper.GetExtState("AvianWaves.AWNKT", "G_X")
+		local gY = reaper.GetExtState("AvianWaves.AWNKT", "G_Y")
+		local gW = reaper.GetExtState("AvianWaves.AWNKT", "G_W")
+		local gH = reaper.GetExtState("AvianWaves.AWNKT", "G_H")
+		gfx.init("AWNKT", gW, gH, gDock, gX, gY)
+	else
+		gfx.init("AWNKT", 500, 200, false)
+	end
+
+	-- Set font
+	local operatingSystem = reaper.GetOS()
+	if string.find(operatingSystem, "Win") then
+		gfx.setfont(1, FontWin, FontSize)
+	elseif string.find(operatingSystem, "Mac") then
+		gfx.setfont(1, FontMac, FontSize)
+	else
+		gfx.setfont(1, FontOther, FontSize)
+	end
+
+	-- Set the colors
+	GfxColorBGRed, GfxColorBGGreen, GfxColorBGBlue = RGBConvert(reaper.ColorFromNative(reaper.GetThemeColor("col_main_bg2", 0)))
+	GfxColorTextRed, GfxColorTextGreen, GfxColorTextBlue = RGBConvert(reaper.ColorFromNative(reaper.GetThemeColor("col_main_text2", 0)))
+	GfxColorTextRed = GfxColorTextRed * FontGamma
+	GfxColorTextGreen = GfxColorTextGreen * FontGamma
+	GfxColorTextBlue = GfxColorTextBlue * FontGamma
+	GfxColorTextSoloRed = GfxColorTextRed * TextSoloYellowGamma
+	GfxColorTextSoloGreen = GfxColorTextGreen * TextSoloYellowGamma
+	GfxColorTextSoloBlue = GfxColorTextBlue * (1 / TextSoloYellowGamma)
+	GfxColorVolRed = GfxColorBGRed * VolGamma
+	GfxColorVolGreen = GfxColorBGGreen * VolGamma
+	GfxColorVolBlue = GfxColorBGBlue * VolGamma
+	GfxColorVolMuteRed = GfxColorVolRed * VolMuteRedGamma
+	GfxColorVolMuteGreen = GfxColorVolGreen * (1 / VolMuteRedGamma)
+	GfxColorVolMuteBlue = GfxColorVolBlue * (1 / VolMuteRedGamma)
+	GfxColorActiveTrackRed = GfxColorTextRed * ActiveTrackGamma
+	GfxColorActiveTrackGreen = GfxColorTextGreen * ActiveTrackGamma
+	GfxColorActiveTrackBlue = GfxColorTextBlue * ActiveTrackGamma
+
+	-- Draw the initial window
+	DrawWindow()
+
+	-- Signal we are ready for drawing on next tick
+	GfxDoDraw = true
 end
 
--- Set font
-local operatingSystem = reaper.GetOS()
-if string.find(operatingSystem, "Win") then
-  gfx.setfont(1, "Calibri", 20)
-else
-  gfx.setfont(1, "Helvetica", 20)
-end
-
--- Set the colors
-GfxColorBGRed, GfxColorBGGreen, GfxColorBGBlue = rgbConvert(reaper.ColorFromNative(reaper.GetThemeColor("col_main_bg2", 0)))
-GfxColorTextRed, GfxColorTextGreen, GfxColorTextBlue = rgbConvert(reaper.ColorFromNative(reaper.GetThemeColor("col_main_text2", 0)))
-GfxColorTextRed = GfxColorTextRed * FontGamma
-GfxColorTextGreen = GfxColorTextGreen * FontGamma
-GfxColorTextBlue = GfxColorTextBlue * FontGamma
-GfxColorTextSoloRed = GfxColorTextRed * TextSoloYellowGamma
-GfxColorTextSoloGreen = GfxColorTextGreen * TextSoloYellowGamma
-GfxColorTextSoloBlue = GfxColorTextBlue * (1 / TextSoloYellowGamma)
-GfxColorVolRed = GfxColorBGRed * VolGamma
-GfxColorVolGreen = GfxColorBGGreen * VolGamma
-GfxColorVolBlue = GfxColorBGBlue * VolGamma
-GfxColorVolMuteRed = GfxColorVolRed * VolMuteRedGamma
-GfxColorVolMuteGreen = GfxColorVolGreen * (1 / VolMuteRedGamma)
-GfxColorVolMuteBlue = GfxColorVolBlue * (1 / VolMuteRedGamma)
-GfxColorActiveTrackRed = GfxColorTextRed * ActiveTrackGamma
-GfxColorActiveTrackGreen = GfxColorTextGreen * ActiveTrackGamma
-GfxColorActiveTrackBlue = GfxColorTextBlue * ActiveTrackGamma
-
--- Draw the initial window
-DrawWindow()
-
--- Signal we are ready for drawing on next tick (after going through a tick cycle)
-GfxDoDraw = true
-
+DebugMsg("<< AWNKT Service Started >>\n")
