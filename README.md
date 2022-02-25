@@ -23,3 +23,12 @@ After installation the NK2 will control track volume using faders, track pan usi
 11. Click on "New action..." and "Load ReaScript..."
 12. Select all of the AWNKT scripts *except* the ones that begin with two underscores.  (It won't hurt if you import them but they aren't meant to be run manually so won't really do anything.)
 13. Run the AWNKT-Service.lua script from the action menu.  This starts the background service required for AWNKT to work.  *Note: this will need to be run each time you start Reaper.  This can automatically be set to run using instructions further down.  For now, run it manually.*
+14. The AWNKT window will appear.  It can be resized and docked.  If you don't want it, just close it.  You can stop it from reopening by editing the AWNKT.ini file and setting ShowWindow = 0.
+15. Now you need to assign NK2 knobs, faders, and buttons to shortcuts of all the AWNKT-Track-????? actions.  These are dynamic actions that, as explained above, automatically allow the NK2 to adjust settings on groups of 8 tracks (Reaper tracks 1-8, 9-16, 10-24, 25-32, etc.) depending on which track is active (last touched).  When you do it's important to correctly set ABSOLUTE or RELATIVE 1 MIDI CC mode.  See the table below for suggested mapping and modes.
+16. Assign the transport controls to built-in Reaper actions.  See the table below for suggested mapping and modes.
+
+# Automatically Starting AWNKT-Service.lua When Reaper Starts
+1.  In the Reaper Scripts folder, create or edit a file called __\_\_startup.lua__
+2.  It's important that it is spelled exactly like that.  Reaper automatically runs this file at Reaper startup.  Note it has two underscores.
+3.  Add one line: __reaper.Main_OnCommand(reaper.NamedCommandLookup("\_RS6b2f3bf07c6b0fd49229d3b382e2d39522d46757"), -1)__
+4.  Replace "\_RS6b2f3bf07c6b0fd49229d3b382e2d39522d46757" with the Command ID of AWNKT-Service.lua as shown in the Action Window.
