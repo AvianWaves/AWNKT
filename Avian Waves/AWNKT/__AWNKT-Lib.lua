@@ -30,7 +30,7 @@ function AWNKT_SetTrackPan(trackNum, panCC)
 		local track = reaper.GetTrack(0, trackNum - 1)    -- Note how we have to convert to zero-based index for GetTrack()
 		local pan = ((2 / 127) * panCC) - 1
 		pan = math.floor(pan * 100 + 0.5) / 100  -- Round to two decimal places
-		if (pan > -0.02 and pan < 0.02) then     -- Give the pot a wider zero region (it will likely just skip over 0 otherwise)
+		if (pan > -0.02 and pan < 0.02) then     -- Give the knob a wider zero region (it will likely just skip over 0 otherwise)
 			pan = 0
 		end
 		
