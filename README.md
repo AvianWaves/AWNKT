@@ -32,3 +32,65 @@ After installation the NK2 will control track volume using faders, track pan usi
 2.  It's important that it is spelled exactly like that.  Reaper automatically runs this file at Reaper startup.  Note it has two underscores.
 3.  Add one line: __reaper.Main_OnCommand(reaper.NamedCommandLookup("\_RS6b2f3bf07c6b0fd49229d3b382e2d39522d46757"), -1)__
 4.  Replace "\_RS6b2f3bf07c6b0fd49229d3b382e2d39522d46757" with the Command ID of AWNKT-Service.lua as shown in the Action Window.
+
+# Suggested Mappings and Modes
+| __Reaper Action__ | __Built-in/Script__ | __NK2 Control__ | __NK2 MIDI__ | __MIDI CC Mode__ | 
+| --- | --- | --- | --- | --- |
+| Script: AWNKT-Track-Move-Backup-8-Tracks.lua | Script | Track Prev | MIDI Chan 1 CC 58 | Relative 1 | 
+| Script: AWNKT-Track-Move-Forward-8-Tracks.lua | Script | Track Next | MIDI Chan 1 CC 59 | Relative 1 | 
+| | | | | |
+| Options: Cycle ripple editing mode | Built-in | Cycle | MIDI Chan 1 CC 46 | Relative 1 | 
+| Markers: Insert marker at current position | Built-in | Market Set | MIDI Chan 1 CC 60 | Relative 1 | 
+| SWS: Goto/select previous marker/region | SWS | Marker Prev | MIDI Chan 1 CC 61 | Relative 1 | 
+| SWS: Goto/select next marker/region | SWS | Marker Next | MIDI Chan 1 CC 62 | Relative 1 | 
+| | | | | |
+| Transport: Rewind a little bit | Built-in | Rewind | MIDI Chan 1 CC 43 | Relative 1 | 
+| Transport: Fast forward a little bit | Built-in | Forward | MIDI Chan 1 CC 44 | Relative 1 | 
+| Transport: Stop | Built-in | Stop | MIDI Chan 1 CC 42 | Relative 1 | 
+| Transport: Play/pause | Built-in | Play | MIDI Chan 1 CC 41 | Relative 1 | 
+| Transport: Record | Built-in | Record | MIDI Chan 1 CC 45 | Relative 1 | 
+| | | | | |
+| AWNKT-Track-Volume-1-9-17-etc.lua | Script | Fader 1 | MIDI Chan 1 CC 0 | Absolute | 
+| AWNKT-Track-Volume-2-10-18-etc.lua | Script | Fader 2 | MIDI Chan 1 CC 1 | Absolute | 
+| AWNKT-Track-Volume-3-11-19-etc.lua | Script | Fader 3 | MIDI Chan 1 CC 2 | Absolute | 
+| AWNKT-Track-Volume-4-12-20-etc.lua | Script | Fader 4 | MIDI Chan 1 CC 3 | Absolute | 
+| AWNKT-Track-Volume-5-13-21-etc.lua | Script | Fader 5 | MIDI Chan 1 CC 4 | Absolute | 
+| AWNKT-Track-Volume-6-14-22-etc.lua | Script | Fader 6 | MIDI Chan 1 CC 5 | Absolute | 
+| AWNKT-Track-Volume-7-15-23-etc.lua | Script | Fader 7 | MIDI Chan 1 CC 6 | Absolute | 
+| AWNKT-Track-Volume-8-16-24-etc.lua | Script | Fader 8 | MIDI Chan 1 CC 7 | Absolute | 
+| | | | | |
+| AWNKT-Track-Pan-1-9-17-etc.lua | Script | Knob 1 | MIDI Chan 1 CC 16 | Absolute | 
+| AWNKT-Track-Pan-2-10-18-etc.lua | Script | Knob 2 | MIDI Chan 1 CC 17 | Absolute | 
+| AWNKT-Track-Pan-3-11-19-etc.lua | Script | Knob 3 | MIDI Chan 1 CC 18 | Absolute | 
+| AWNKT-Track-Pan-4-12-20-etc.lua | Script | Knob 4 | MIDI Chan 1 CC 19 | Absolute | 
+| AWNKT-Track-Pan-5-13-21-etc.lua | Script | Knob 5 | MIDI Chan 1 CC 20 | Absolute | 
+| AWNKT-Track-Pan-6-14-22-etc.lua | Script | Knob 6 | MIDI Chan 1 CC 21 | Absolute | 
+| AWNKT-Track-Pan-7-15-23-etc.lua | Script | Knob 7 | MIDI Chan 1 CC 22 | Absolute | 
+| AWNKT-Track-Pan-8-16-24-etc.lua | Script | Knob 8 | MIDI Chan 1 CC 23 | Absolute | 
+| | | | | |
+| AWNKT-Track-ToggleSolo-1-9-17-etc.lua | Script | Solo 1 | MIDI Chan 1 CC 32 | Relative 1 | 
+| AWNKT-Track-ToggleSolo-2-10-18-etc.lua | Script | Solo 2 | MIDI Chan 1 CC 33 | Relative 1 | 
+| AWNKT-Track-ToggleSolo-3-11-19-etc.lua | Script | Solo 3 | MIDI Chan 1 CC 34 | Relative 1 | 
+| AWNKT-Track-ToggleSolo-4-12-20-etc.lua | Script | Solo 4 | MIDI Chan 1 CC 35 | Relative 1 | 
+| AWNKT-Track-ToggleSolo-5-13-21-etc.lua | Script | Solo 5 | MIDI Chan 1 CC 36 | Relative 1 | 
+| AWNKT-Track-ToggleSolo-6-14-22-etc.lua | Script | Solo 6 | MIDI Chan 1 CC 37 | Relative 1 | 
+| AWNKT-Track-ToggleSolo-7-15-23-etc.lua | Script | Solo 7 | MIDI Chan 1 CC 38 | Relative 1 | 
+| AWNKT-Track-ToggleSolo-8-16-24-etc.lua | Script | Solo 8 | MIDI Chan 1 CC 39 | Relative 1 | 
+| | | | | |
+| AWNKT-Track-ToggleMute-1-9-17-etc.lua | Script | Mute 1 | MIDI Chan 1 CC 48 | Relative 1 | 
+| AWNKT-Track-ToggleMute-2-10-18-etc.lua | Script | Mute 2 | MIDI Chan 1 CC 49 | Relative 1 | 
+| AWNKT-Track-ToggleMute-3-11-19-etc.lua | Script | Mute 3 | MIDI Chan 1 CC 50 | Relative 1 | 
+| AWNKT-Track-ToggleMute-4-12-20-etc.lua | Script | Mute 4 | MIDI Chan 1 CC 51 | Relative 1 | 
+| AWNKT-Track-ToggleMute-5-13-21-etc.lua | Script | Mute 5 | MIDI Chan 1 CC 52 | Relative 1 | 
+| AWNKT-Track-ToggleMute-6-14-22-etc.lua | Script | Mute 6 | MIDI Chan 1 CC 53 | Relative 1 | 
+| AWNKT-Track-ToggleMute-7-15-23-etc.lua | Script | Mute 7 | MIDI Chan 1 CC 54 | Relative 1 | 
+| AWNKT-Track-ToggleMute-8-16-24-etc.lua | Script | Mute 8 | MIDI Chan 1 CC 55 | Relative 1 | 
+| | | | | |
+| AWNKT-Track-CycleRecArm-1-9-17-etc.lua | Script | Record 1 | MIDI Chan 1 CC 64 | Relative 1 | 
+| AWNKT-Track-CycleRecArm-2-10-18-etc.lua | Script | Record 2 | MIDI Chan 1 CC 65 | Relative 1 | 
+| AWNKT-Track-CycleRecArm-3-11-19-etc.lua | Script | Record 3 | MIDI Chan 1 CC 66 | Relative 1 | 
+| AWNKT-Track-CycleRecArm-4-12-20-etc.lua | Script | Record 4 | MIDI Chan 1 CC 67 | Relative 1 | 
+| AWNKT-Track-CycleRecArm-5-13-21-etc.lua | Script | Record 5 | MIDI Chan 1 CC 68 | Relative 1 | 
+| AWNKT-Track-CycleRecArm-6-14-22-etc.lua | Script | Record 6 | MIDI Chan 1 CC 69 | Relative 1 | 
+| AWNKT-Track-CycleRecArm-7-15-23-etc.lua | Script | Record 7 | MIDI Chan 1 CC 70 | Relative 1 | 
+| AWNKT-Track-CycleRecArm-8-16-24-etc.lua | Script | Record 8 | MIDI Chan 1 CC 71 | Relative 1 | 
