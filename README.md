@@ -1,5 +1,5 @@
 # Avian Waves NK2 Toolkit for Reaper (Script-Based MIDI Control Surface)
-A ReaScript (LUA) and MIDI CC based approach for connecting the Korg NanoKontrol 2 to Reaper DAW to use as a control surface. *Note: this is project is in beta and requires a fair amount of setup and knowledge of Reaper.*
+A ReaScript (Lua) and MIDI CC based approach for connecting the Korg NanoKontrol 2 to Reaper DAW to use as a control surface. *Note: this is project is in beta and requires a fair amount of setup and knowledge of Reaper.*
 
 # Summary
 Reaper DAW has support for numerous control surfaces, but not the Korg NanoKontrol 2 natively.  Putting the NK2 into SONAR mode allows you to use the Mackie Control Universal setting in Reaper, but the results leave a lot to be desired.  The interface is sluggish and Reaper gets bogged down to the point of sometimes crashing if you move multiple faders at the same time.
