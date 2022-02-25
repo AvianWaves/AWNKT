@@ -12,12 +12,12 @@ After installation the NK2 will control track volume using faders, track pan usi
 # Installation
 1. Using the Korg Kontrol Editor, put your NanoKontrol 2 into CC control mode with LED Mode set to EXTERNAL.  Set the global MIDI channel to 1.
 2. In Reaper, under MIDI Devices, set the NaonKontrol 2 to "Enable input for control messages."  It is also recommended to disable "Enable input" so there isn't interference with instruments or plugins when moving the NK2's faders and knobs.  For the MIDI output, make sure that is enabled.
-3. Before closing the preferences, take note of the device ID for the NK2.  You'll need this later.
+3. Before closing the preferences, __take note of the device ID for the NK2__.  You'll need this later.
 4. Download the entire AWNKT project.
 5. Create the folder structure for the scripts.  Since I may make other scripts in the future, I recommend making this two folders deep.  Under Windows that would making Avian Waves folder and AWNKT subfolder under %appdata%\REAPER\Scripts.  In the end you would then have a folder structure like this: C:\Users\<your name>\AppData\Roaming\REAPER\Scripts\Avian Waves\AWNKT
 6. Copy all the script files (lua and ini) into that new folder.  There are many files!
 7. Edit the AWNKT.ini file.
-8. Under the NK2 section, edit the "MidiDeviceID" to the device ID noted from step 13 above.  I would recommend not changing any other settings until you test to make sure the defaults work.
+8. Under the NK2 section, edit the "MidiDeviceID" to the device ID noted from step 3 above.  I would recommend not changing any other settings until you test to make sure the defaults work.
 9. Save the INI file.
 10. In Reaper, open the Action window.
 11. Click on "New action..." and "Load ReaScript..."
